@@ -16,7 +16,7 @@ class CustomerController extends ApiController
     public function index()
     {
         return $this->successResponse(
-            CustomerResource::collection(Customer::all())
+            CustomerResource::collection(Customer::latest('created_at')->get())
         );
     }
 

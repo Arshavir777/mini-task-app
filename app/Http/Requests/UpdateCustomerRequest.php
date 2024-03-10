@@ -14,13 +14,11 @@ class UpdateCustomerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'first_name' => 'alpha',
-            'last_name'  => 'alpha',
-            'birth_date' => 'date',
-            'country_id' => 'exists:countries,id',
-            'profession' => 'required',
-            // TODO: check
-            'years_in_profession' => 'required_if:profession,!='
+            'first_name' => 'string|max:10|nullable',
+            'last_name' => 'string|max:10|nullable',
+            'birth_date' => 'date|nullable',
+            'country_id' => 'exists:countries,id|nullable',
+            'years_in_profession' => 'required_if:profession,!=|nullable|numeric|min:0'
         ];
     }
 }
