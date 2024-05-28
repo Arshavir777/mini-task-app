@@ -26,15 +26,15 @@ trait ApiResponseTrait
     /**
      * Api error response
      *
-     * @param string $message
+     * @param mix $message
      * @param integer $code
      * @return JsonResponse
      */
-    protected function errorResponse(string $message, $code): JsonResponse
+    protected function errorResponse(string $errors, $code): JsonResponse
     {
         return response()->json([
             'status' => 'error',
-            'message' => $message
+            'errors' => $errors
         ], $code);
     }
 }

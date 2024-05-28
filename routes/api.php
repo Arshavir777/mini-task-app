@@ -1,8 +1,7 @@
 <?php
 
-use App\Http\Controllers\Api\CountryController;
-use App\Http\Controllers\Api\CustomerController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\TaskController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,14 +15,24 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::post('auth/login', [AuthController::class, 'login']);
+Route::post('auth/register', [AuthController::class, 'register']);
+
+Route::group([
+    'middleware' => 'auth:api'
+], function ($router) {
+    Route::group(['prefix' => 'auth'], function () {
+        Route::post('logout', [AuthController::class, 'logout']);
+        Route::post('refresh', [AuthController::class, 'refresh']);
+        Route::post('me', [AuthController::class, 'me']);
+    });
+
+
+    Route::resource('tasks', TaskController::class);
 });
 
-Route::get('countries')->uses([CountryController::class, 'index']);
-
-Route::post('customers')->uses([CustomerController::class, 'store']);
-Route::patch('customers/{id}')->uses([CustomerController::class, 'update']);
-Route::get('customers')->uses([CustomerController::class, 'index']);
-Route::get('customers/{id}')->uses([CustomerController::class, 'show']);
-Route::delete('customers/{id}')->uses([CustomerController::class, 'destroy']);
+Route::fallback(function () {
+    return response()->json([
+        'message' => 'Resource not found'
+    ], 404);
+});
