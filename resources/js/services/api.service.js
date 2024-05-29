@@ -2,7 +2,7 @@ import axios from 'axios';
 
 class ApiService {
   constructor() {
-    this.client = axios.create({ baseURL: 'http://localhost:8000' });
+    this.client = axios.create();
   }
 
   setAuthHeader(token) {
@@ -28,22 +28,18 @@ class ApiService {
   }
 
   async loadTasks() {
-    try {
-      const { data } = await this.client.get('/api/tasks');
-      return data;
-    } catch (error) {
-      return [];
-    }
+    const { data } = await this.client.get('/api/tasks');
+    return data;
   }
 
-  async createTask(data) {
-    const res = await this.client.post('/api/tasks', data);
-    return res.data;
+  async createTask(form) {
+    const { data } = await this.client.post('/api/tasks', form);
+    return data;
   }
 
-  async updateTask(id, data) {
-    const res = await this.client.patch(`/api/tasks/${id}`, data);
-    return res.data;
+  async updateTask(id, form) {
+    const { data } = await this.client.patch(`/api/tasks/${id}`, form);
+    return data;
   }
 
   async deleteTask(id) {

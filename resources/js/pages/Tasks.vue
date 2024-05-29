@@ -4,52 +4,52 @@
       <v-col cols="12">
         <v-card>
           <v-card-title>
-            <span class="headline">Tasks</span>
+            <span class="headline">All Tasks</span>
             <v-spacer></v-spacer>
             <v-btn color="green" @click="showEditDialog = true" size="small">
               Add
             </v-btn>
           </v-card-title>
-          <v-list>
-            <template v-for="(task, index) in allTasks">
-              <v-list-group v-if="task.subTasks.length" :key="index" :value="task.expanded"
-                @click="task.expanded = !task.expanded">
-                <template v-slot:activator>
-                  <TaskLineItem :task="task"
-                    @edit="openEditDialog(task)"
-                    @delete="openConfirmDialog(task)" />
-                </template>
-                <TaskLineItem v-for="(subTask, subIndex) in task.subTasks"
-                  :key="subIndex"
-                  :task="subTask"
-                  @edit="openEditDialog(task)"
-                  @delete="openConfirmDialog(task)" />
-              </v-list-group>
-              <TaskLineItem :key="task.id" :task="task" v-else
-                @edit="openEditDialog(task)"
-                @delete="openConfirmDialog(task)"
-                />
-            </template>
-          </v-list>
+          <div v-if="taskStatus === 'loading'" class="text-center">
+            Loading...
+          </div>
+          <div v-else>
+            <TaskList
+              v-if="allTasks.length"
+              :tasks="allTasks"
+              @edit="openEditDialog"
+              @delete="openConfirmDialog"
+            />
+            <div v-else class="text-center">
+              <p>Tasks not found</p>
+            </div>
+          </div>
         </v-card>
       </v-col>
     </v-row>
-    <TaskEditDialog :show="showEditDialog" @close="showEditDialog = false" @submit="handleSaveTask" />
-    <ConfirmDialog :show="showConfirmDialog" @cancel="showConfirmDialog = false"
-      @ok="handleDelete" />
+    <TaskEditDialog
+      :show="showEditDialog"
+      @close="handleEditDialogClose"
+      @submit="handleSubmit"
+    />
+    <ConfirmDialog
+      :show="showConfirmDialog"
+      @cancel="showConfirmDialog = false"
+      @ok="handleDelete"
+    />
   </v-container>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import TaskLineItem from '../components/TaskLineItem.vue';
+import TaskList from '../components/TaskList.vue';
 import TaskEditDialog from '../components/TaskEditDialog.vue';
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import apiErrorHandler from '../mixins/apiErrorHandler';
 
 export default {
   components: {
-    TaskLineItem,
+    TaskList,
     TaskEditDialog,
     ConfirmDialog,
   },
@@ -61,20 +61,16 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(['allTasks']),
+    ...mapGetters(['allTasks', 'selectedTask', 'taskStatus']),
   },
   methods: {
-    ...mapActions(['fetchTasks', 'addTask', 'deleteTask', 'setSelectedTask']),
-    async addTask() {
-      const task = {
-        name: this.taskName,
-        description: this.taskDescription,
-        status: 'Pending',
-      };
-      await this.addTask(task);
-      this.taskName = '';
-      this.taskDescription = '';
-    },
+    ...mapActions([
+      'fetchTasks',
+      'addTask',
+      'updateTask',
+      'deleteTask',
+      'setSelectedTask',
+    ]),
     openEditDialog(task) {
       this.setSelectedTask(task);
       this.showEditDialog = true;
@@ -83,17 +79,41 @@ export default {
       this.setSelectedTask(task);
       this.showConfirmDialog = true;
     },
+    handleEditDialogClose() {
+      this.showEditDialog = false;
+      this.setSelectedTask(null);
+    },
     async handleDelete() {
       try {
         await this.deleteTask(this.selectedTask.id);
+        this.showNotification({
+          color: 'success',
+          message: 'Task successfully deleted',
+        });
         this.setSelectedTask(null);
+        await this.fetchTasks();
       } catch (error) {
         this.handleApiError(error);
       }
     },
-    async handleSaveTask(data) {
+    async handleSubmit(data) {
       try {
-        await this.addTask(data);
+        if (data.id) {
+          await this.updateTask(data);
+          this.showNotification({
+            color: 'success',
+            message: 'Task successfully updated',
+          });
+        } else {
+          await this.addTask(data);
+          this.showNotification({
+            color: 'success',
+            message: 'Task successfully created',
+          });
+        }
+
+        await this.fetchTasks();
+        this.showEditDialog = false;
       } catch (error) {
         this.handleApiError(error);
       }

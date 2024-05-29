@@ -2,12 +2,14 @@ import { apiService } from '../../services';
 
 const state = {
   tasks: [],
+  parentTasks: [],
   selectedTask: null,
   status: '',
 };
 
 const getters = {
   allTasks: (state) => state.tasks,
+  parentTasks: (state) => state.parentTasks,
   taskStatus: (state) => state.status,
   selectedTask: (state) => state.selectedTask,
 };
@@ -24,7 +26,7 @@ const actions = {
     }
   },
   async addTask({ commit }, task) {
-    const data = await apiService.createTask(task);
+    const { data } = await apiService.createTask(task);
     commit('new_task', data);
   },
   async deleteTask({ commit }, id) {
@@ -32,11 +34,9 @@ const actions = {
     commit('remove_task', id);
   },
   async updateTask({ commit }, updatedTask) {
-    const response = await apiService.deleteTask(updatedTask);
-    commit('update_task', response.data);
+    await apiService.updateTask(updatedTask.id, updatedTask);
   },
   async setSelectedTask({ commit }, task) {
-    console.log({task});
     commit('set_selected_task', task);
   },
 };
@@ -45,8 +45,9 @@ const mutations = {
   fetch_request(state) {
     state.status = 'loading';
   },
-  set_tasks(state, tasks) {
+  set_tasks(state, { tasks, parentTasks }) {
     state.tasks = tasks;
+    state.parentTasks = parentTasks;
     state.status = 'success';
   },
   fetch_error(state) {
@@ -57,12 +58,6 @@ const mutations = {
   },
   remove_task(state, id) {
     state.tasks = state.tasks.filter((task) => task.id !== id);
-  },
-  update_task(state, updatedTask) {
-    const index = state.tasks.findIndex((task) => task.id === updatedTask.id);
-    if (index !== -1) {
-      state.tasks.splice(index, 1, updatedTask);
-    }
   },
   set_selected_task(state, selectedTask) {
     state.selectedTask = selectedTask;

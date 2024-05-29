@@ -31,7 +31,7 @@ class AuthController extends ApiController
         $credentials = request(['email', 'password']);
 
         if (!$token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Bad Credentials'], 400);
+            return response()->json(['errors' => ['Bad Credentials']], 400);
         }
 
         return $this->respondWithToken($token); # If all credentials are correct - we are going to generate a new access token and send it back on response

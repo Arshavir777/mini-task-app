@@ -14,10 +14,9 @@ export default {
         }
         this.showNotification({ color: 'error', message });
       } else if (error.request) {
-        // The request was made but no response was received
         this.showNotification({ color: 'error', message: 'No response received from server' });
       } else {
-        // Something happened in setting up the request that triggered an error
+        console.log({ error });
         this.showNotification({ color: 'error', message: 'Request failed' });
       }
     },

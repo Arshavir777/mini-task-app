@@ -1,25 +1,19 @@
-<!-- resources/js/components/Notification.vue -->
-
 <template>
-<v-snackbar
-      v-model="notification.show"
-      :color="notification.color"
-      :timeout="notification.timeout"
-      top
-      right
-    >
+  <v-snackbar
+    v-model="notification.show"
+    :color="notification.color"
+    :timeout="notification.timeout"
+    top
+    right
+  >
     {{ notification.message }}
-      <template v-slot:actions>
-        <v-btn
-          color="pink"
-          variant="text"
-          @click="hideNotification"
-        >
-          Close
-        </v-btn>
-      </template>
-    </v-snackbar>
-  </template>
+    <template v-slot:actions>
+      <v-btn color="pink" variant="text" @click="hideNotification">
+        Close
+      </v-btn>
+    </template>
+  </v-snackbar>
+</template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex';

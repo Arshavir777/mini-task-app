@@ -31,6 +31,7 @@
           <v-card-actions>
             <v-btn
               color="info"
+              variant="text"
               :to="'/login'"
             >
               Login

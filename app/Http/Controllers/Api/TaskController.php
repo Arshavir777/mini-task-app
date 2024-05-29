@@ -3,58 +3,66 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\ApiController;
+use App\Http\Requests\StoreTaskRequest;
+use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
-use Illuminate\Http\Request;
 
 class TaskController extends ApiController
 {
     public function index()
     {
-        $tasks = Task::with('subTasks')->get();
+        $authUser = auth()->user();
+        $parentTasks = Task::where('user_id', $authUser->id)->get();
+        $tasks = Task::with('subTasksRecursive')
+            ->where('user_id', $authUser->id)
+            ->whereNull('parent_id')
+            ->get();
 
-        // dd($tasks->load('subTasks'));
-
-        // $authUser = auth()->user();
-        // $tasks = $authUser->tasks()->with('subTasks')->get();
-        return $this->successResponse(TaskResource::collection($tasks));
+        return $this->successResponse(
+            [
+                'tasks' => TaskResource::collection($tasks),
+                'parentTasks' => TaskResource::collection($parentTasks)
+            ]
+        );
     }
 
-    public function store(Request $request)
+    public function store(StoreTaskRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'required|in:Pending,In Progress,Completed,On Hold,Cancelled,Under Review,Approved,Rejected,Deferred'
-        ]);
-
-        return Task::create($request->all());
+        $authUser = auth()->user();
+        $taskDto = $request->all();
+        $taskDto['user_id'] = $authUser->id;
+        $task = Task::create($taskDto);
+        return $this->successResponse(new TaskResource($task));
     }
 
     public function show($id)
     {
-        return Task::findOrFail($id);
+        return $this->successResponse(new TaskResource(Task::find($id)));
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateTaskRequest $request, $id)
     {
         $task = Task::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'status' => 'required|in:Pending,In Progress,Completed,On Hold,Cancelled,Under Review,Approved,Rejected,Deferred'
-        ]);
-
         $task->update($request->all());
 
-        return $task;
+        return $this->successResponse(new TaskResource($task));
     }
 
     public function destroy($id)
     {
+        // TODO: handle errors, try-catch
+        $authUser = auth()->user();
+
+        $task = Task::findOrFail($id);
+
+        if ($task->user_id !== $authUser->id) {
+            return $this->errorResponse('Not permited', 403);
+        }
+
         Task::destroy($id);
 
-        return response()->json(['message' => 'Task deleted successfully']);
+        return  $this->successResponse([]);
     }
 }

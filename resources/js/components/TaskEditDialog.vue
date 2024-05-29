@@ -1,38 +1,43 @@
 <template>
-  <v-dialog v-model="dialog" max-width="400">
+  <v-dialog v-model="dialog" max-width="400" persistent>
     <v-card>
-      <v-card-title class="headline"> Task </v-card-title>
+      <v-card-title class="headline" v-if="form.id">
+        Edit Task # {{ form.id }}</v-card-title
+      >
+      <v-card-title class="headline" v-else> New Task</v-card-title>
       <v-card-text>
-        <v-form ref="form" v-model="valid" lazy-validation>
+        <v-form ref="form" lazy-validation @submit.prevent="submit">
           <v-text-field
-            v-model="task.name"
+            v-model="form.name"
             :rules="[rules.required]"
             label="Name"
             required
           ></v-text-field>
           <v-textarea
-            v-model="task.description"
-            :rules="[rules.required]"
+            v-model="form.description"
             label="Description"
             required
           ></v-textarea>
           <v-select
-            v-model="task.status"
+            v-model="form.status"
             :items="statusOptions"
-            :rules="[rules.required]"
             label="Status"
             required
           ></v-select>
           <v-select
-            v-model="task.parent_id"
-            :items="allTasks"
-            :item-title="`name`"
-            :item-value="`id`"
+            v-model="form.parent_id"
+            :items="partentOptions"
+            item-text="name"
+            item-value="id"
             label="Parent Task"
-            required
+            persistent-hint
+            single-line
           ></v-select>
-
-          <v-btn variant="primary" @click="submit">Save</v-btn>
+          <div class="d-flex">
+            <v-btn @click="dialog = false">close</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="primary" @click="submit">Save</v-btn>
+          </div>
         </v-form>
       </v-card-text>
     </v-card>
@@ -46,7 +51,7 @@ export default {
   data() {
     return {
       valid: false,
-      task: {
+      form: {
         name: '',
         description: '',
         status: 'todo',
@@ -55,27 +60,38 @@ export default {
       rules: {
         required: (value) => !!value || 'Required.',
       },
-      statusOptions: ['pending', 'done', 'in progress', 'todo'],
+      statusOptions: ['done', 'in progress', 'todo'],
       dialog: this.show,
     };
   },
-  created() {
-    if (this.selectedTask) {
-      this.task = JSON.parse(JSON.stringify(this.selectedTask));
-    }
-  },
   computed: {
-    ...mapGetters(['selectedTask', 'allTasks']),
+    ...mapGetters(['selectedTask', 'parentTasks']),
+    partentOptions() {
+      return this.parentTasks.filter(
+        (parentTask) => parentTask.id !== this.form.id,
+      );
+    },
   },
   methods: {
     submit() {
-      if (this.$refs.form.validate()) {
+      if (this.validate()) {
         this.$emit('submit', this.form);
       }
     },
-    resetForm() {
-      console.log('reset');
-      this.resetForm();
+    validate() {
+      return this.$refs.form.validate();
+    },
+    reset() {
+      this.$refs.form.resetValidation();
+    },
+    clear() {
+      this.reset();
+      this.form = {
+        name: '',
+        description: '',
+        status: 'todo',
+        parent_id: null,
+      };
     },
   },
   props: {
@@ -88,8 +104,9 @@ export default {
     dialog(newValue) {
       if (!newValue) {
         this.$emit('close');
+        this.clear();
       } else if (this.selectedTask) {
-        this.task = JSON.parse(JSON.stringify(this.selectedTask));
+        this.form = JSON.parse(JSON.stringify(this.selectedTask));
       }
     },
     show(newVal) {

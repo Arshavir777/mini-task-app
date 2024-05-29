@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,7 +19,9 @@ class TaskResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'description' => $this->description,
-            'subTasks' => $this->subTasks,
+            'parent_id' => $this->parent_id,
+            'createdAt' => Carbon::parse($this->created_at)->format('Y-m-d: h:i:s'),
+            'subTasks' => TaskResource::collection($this->whenLoaded('subTasksRecursive')),
             'status' => $this->status
         ];
     }
